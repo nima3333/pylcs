@@ -221,6 +221,8 @@ double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
     int X2 = buf2.shape[0];
     int Y2 = buf2.shape[1];
     
+    assert(Y1 == Y2);
+
     int *ptr1 = (int *) buf1.ptr;
     int *ptr2 = (int *) buf2.ptr;
 
@@ -232,10 +234,9 @@ double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
 
     // Initialize array
     for (i = 0; i <= m; i++) {
-        dp[i][0] = 0;
-    }
-    for (j = 0; j <= n; j++) {
-        dp[0][j] = 0;
+        for (j = 0; j <= n; j++) {
+            dp[i][j] = 0;
+        }
     }
 
     for (i = 1; i <= m; i++) {
@@ -244,18 +245,19 @@ double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
             if (ptr1[(i - 1)*Y1] == ptr2[(j - 1)*Y2]) {
                 // Calculate score
                 vector<double> score_list;
+                score_list.push_back(1.0);
                 // Fetch TLS and size
                 int size1 = ptr1[(i - 1)*Y1 + 2], size2 = ptr2[(j - 1)*Y2 + 2];
                 int tls1 = ptr1[(i - 1)*Y1 + 1], tls2 = ptr2[(j - 1)*Y2 + 1];
                 bool is_size = (size1 != -2) and (size2 != -2);
                 bool is_tls = (tls1 != -2) and (tls2 != -2);
 
-                score_list.push_back(1.0);
                 if(is_size and size1 != 0 and size2 != 0){
-                    size1, size2 = max(size1, size2), min(size1, size2);
-					score_list.push_back(1 - (size1 - size2) / size1);
+                    int size_max = max(size1, size2);
+                    int size_min = min(size1, size2);
+					score_list.push_back(1. - (double(size_max - size_min) / double(size_max)));
                 }
-                else if(is_size and (size1 == 0 ^ size2 == 0)){
+                else if(is_size and ((size1 == 0) != (size2 == 0))){
                     score_list.push_back(1);
                 }
                 if(is_tls){
@@ -278,7 +280,7 @@ double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
             }
         }
     }
-    return dp[m][n];
+    return dp[m][n] / max(m, n);
 }
 
 /*
