@@ -318,11 +318,11 @@ PYBIND11_MODULE(pylcs, m) {
         Same As levenshtein_distance(): Levenshtein Distance of Two Strings
     )pbdoc");
 
-    m.def("custom lcs", &lcs_sim_score_1, R"pbdoc(
+    m.def("custom_lcs", &lcs_sim_score_1, R"pbdoc(
         Custom Longest common subsequence taking into account attributes
     )pbdoc");
 
-    m.def("custom lcs2", &lcs_sim_score_2, R"pbdoc(
+    m.def("custom_lcs2", &lcs_sim_score_2, R"pbdoc(
         Custom Longest common subsequence (2) taking into account attributes
     )pbdoc");
 }
