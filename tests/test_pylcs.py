@@ -1,5 +1,6 @@
 # encoding=utf-8
 import pylcs
+import numpy as np
 
 
 def test_lcs():
@@ -37,3 +38,8 @@ def test_edit_distance_of_list():
     assert pylcs.edit_distance_of_list("aaa", ["bbb"] * 10) == [3] * 10
     assert pylcs.edit_distance_of_list("aaa你好", ["你好呀"] * 10) == [4] * 10
     assert pylcs.edit_distance_of_list("aaa你好", ["bbb", "你好呀"] * 10) == [5, 4] * 10
+
+a = np.zeros((10,3))
+b = np.ones((10,3)) * 3 
+c = pylcs.add_arrays(a, b)
+print(c)

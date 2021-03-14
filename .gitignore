@@ -10,3 +10,7 @@ dist
 tmp
 .vscode
 .idea/
+build/
+dist/
+pylcs.egg-info
+var/

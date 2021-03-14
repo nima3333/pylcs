@@ -1,11 +1,14 @@
 ﻿#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <string.h>
 #include <sstream>
+
 using namespace std;
+namespace py = pybind11;
 
 
 vector<string> utf8_split(const string &str){
@@ -170,9 +173,36 @@ vector<int> levenshtein_distance_of_list(const string &str1, vector<string> &str
     return ls;
 }
 
+py::array_t<double> add_arrays(py::array_t<double> input1, py::array_t<double> input2) {
+  py::buffer_info buf1 = input1.request();
+  py::buffer_info buf2 = input2.request();
 
-namespace py = pybind11;
+  if (buf1.size != buf2.size) {
+    throw std::runtime_error("Input shapes must match");
+  }
 
+  /*  allocate the buffer */
+  py::array_t<double> result = py::array_t<double>(buf1.size);
+
+  py::buffer_info buf3 = result.request();
+
+  double *ptr1 = (double *) buf1.ptr,
+         *ptr2 = (double *) buf2.ptr,
+         *ptr3 = (double *) buf3.ptr;
+  int X = buf1.shape[0];
+  int Y = buf1.shape[1];
+
+  for (size_t idx = 0; idx < X; idx++) {
+    for (size_t idy = 0; idy < Y; idy++) {
+      ptr3[idx*Y + idy] = ptr1[idx*Y+ idy] + ptr2[idx*Y+ idy];
+    }
+  }
+ 
+  // reshape array to match input shape
+  result.resize({X,Y});
+
+  return result;
+}
 
 PYBIND11_MODULE(pylcs, m) {
     m.def("lcs", &lcs, R"pbdoc(
@@ -206,4 +236,9 @@ PYBIND11_MODULE(pylcs, m) {
     m.def("edit_distance_of_list", &levenshtein_distance_of_list, R"pbdoc(
         Levenshtein Distance of one string to a list of strings
     )pbdoc");
+
+    m.def("add_arrays", &add_arrays, R"pbdoc(
+        Add arrays
+    )pbdoc");
+
 }
