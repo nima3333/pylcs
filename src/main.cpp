@@ -111,28 +111,6 @@ int lcs2(const string &str1, const string &str2){
 }
 
 
-vector<int> lcs_of_list(const string &str1, vector<string> &str_list){
-    int size = str_list.size();
-    vector<int> ls(size);
-    for (int i = 0; i < size; i++){
-        int l = lcs(str1, str_list[i]);
-        ls[i] = l;
-    }
-    return ls;
-}
-
-
-vector<int> lcs2_of_list(const string &str1, vector<string> &str_list){
-    int size = str_list.size();
-    vector<int> ls(size);
-    for (int i = 0; i < size; i++){
-        int l = lcs2(str1, str_list[i]);
-        ls[i] = l;
-    }
-    return ls;
-}
-
-
 // 编辑距离
 int levenshtein_distance(const string &str1, const string &str2) {
     if (str1 == "" || str2 == "")
@@ -163,49 +141,8 @@ int levenshtein_distance(const string &str1, const string &str2) {
 }
 
 
-vector<int> levenshtein_distance_of_list(const string &str1, vector<string> &str_list){
-    int size = str_list.size();
-    vector<int> ls(size);
-    for (int i = 0; i < size; i++){
-        int l = levenshtein_distance(str1, str_list[i]);
-        ls[i] = l;
-    }
-    return ls;
-}
 
-py::array_t<double> add_arrays(py::array_t<double> input1, py::array_t<double> input2) {
-  py::buffer_info buf1 = input1.request();
-  py::buffer_info buf2 = input2.request();
-
-  if (buf1.size != buf2.size) {
-    throw std::runtime_error("Input shapes must match");
-  }
-
-  /*  allocate the buffer */
-  py::array_t<double> result = py::array_t<double>(buf1.size);
-
-  py::buffer_info buf3 = result.request();
-
-  double *ptr1 = (double *) buf1.ptr,
-         *ptr2 = (double *) buf2.ptr,
-         *ptr3 = (double *) buf3.ptr;
-  int X = buf1.shape[0];
-  int Y = buf1.shape[1];
-
-  for (size_t idx = 0; idx < X; idx++) {
-    for (size_t idy = 0; idy < Y; idy++) {
-      ptr3[idx*Y + idy] = ptr1[idx*Y+ idy] + ptr2[idx*Y+ idy];
-    }
-  }
- 
-  // reshape array to match input shape
-  result.resize({X,Y});
-
-  return result;
-}
-
-
-double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
+double lcs_sim_score_1(py::array_t<int> input1, py::array_t<int> input2) {
 
     // Format of input1 and input2:
     // [ [TYPE(int), TLS_VERSION(int), SIZE(int)],
@@ -283,53 +220,94 @@ double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
     return dp[m][n] / max(m, n);
 }
 
-/*
-double lcs(py::array_t<int> input1, py::array_t<int> input2) {
-  py::buffer_info buf1 = input1.request();
-  py::buffer_info buf2 = input2.request();
+double lcs_sim_score_2(py::array_t<int> input1, py::array_t<int> input2) {
 
-  if (buf1.size != buf2.size) {
-    throw std::runtime_error("Input shapes must match");
-  }
+    // Format of input1 and input2:
+    // [ [TYPE(int), TLS_VERSION(int), SIZE(int)],
+    //   [TYPE(int), TLS_VERSION(int), SIZE(int)], ...
+    // ]
 
-  py::array_t<double> result = py::array_t<double>(buf1.size);
+    py::buffer_info buf1 = input1.request();
+    py::buffer_info buf2 = input2.request();
 
-  py::buffer_info buf3 = result.request();
+    int X1 = buf1.shape[0];
+    int Y1 = buf1.shape[1];
 
-  double *ptr1 = (double *) buf1.ptr,
-         *ptr2 = (double *) buf2.ptr,
-         *ptr3 = (double *) buf3.ptr;
-  int X = buf1.shape[0];
-  int Y = buf1.shape[1];
+    int X2 = buf2.shape[0];
+    int Y2 = buf2.shape[1];
+    
+    assert(Y1 == Y2);
 
-  for (size_t idx = 0; idx < X; idx++) {
-    for (size_t idy = 0; idy < Y; idy++) {
-      ptr3[idx*Y + idy] = ptr1[idx*Y+ idy] + ptr2[idx*Y+ idy];
+    int *ptr1 = (int *) buf1.ptr;
+    int *ptr2 = (int *) buf2.ptr;
+
+    int m = X1;
+    int n = X2;
+    vector<vector<double>> dp(m + 1, vector<double>(n + 1));
+    int i, j;
+    // printf("%d %d\n", m, n);
+
+    // Initialize array
+    for (i = 0; i <= m; i++) {
+        for (j = 0; j <= n; j++) {
+            dp[i][j] = 0;
+        }
     }
-  }
- 
-  // reshape array to match input shape
-  result.resize({X,Y});
 
-  return result;
+    double maximum;
+    
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            // Check if same type
+            if (ptr1[(i - 1)*Y1] == ptr2[(j - 1)*Y2]) {
+                // Calculate score
+                vector<double> score_list;
+                score_list.push_back(1.0);
+                // Fetch TLS and size
+                int size1 = ptr1[(i - 1)*Y1 + 2], size2 = ptr2[(j - 1)*Y2 + 2];
+                int tls1 = ptr1[(i - 1)*Y1 + 1], tls2 = ptr2[(j - 1)*Y2 + 1];
+                bool is_size = (size1 != -2) and (size2 != -2);
+                bool is_tls = (tls1 != -2) and (tls2 != -2);
+
+                if(is_size and size1 != 0 and size2 != 0){
+                    int size_max = max(size1, size2);
+                    int size_min = min(size1, size2);
+					score_list.push_back(1. - (double(size_max - size_min) / double(size_max)));
+                }
+                else if(is_size and ((size1 == 0) != (size2 == 0))){
+                    score_list.push_back(1);
+                }
+                if(is_tls){
+                    score_list.push_back(0.5 + 0.5 * (tls1 == tls2));
+                }
+                // Average
+                double final_score;
+                double sumTotal = 0;
+                for(int k=0; k < score_list.size(); ++k){
+                    // not sure what to put here basically.
+                    sumTotal += score_list[k];            
+                }
+                final_score = sumTotal / score_list.size();
+                dp[i][j] = dp[i - 1][j - 1] + final_score;
+                if (dp[i][j] > maximum){
+                    maximum = dp[i][j];
+                }
+            } else {
+                dp[i][j] = 0;
+            }
+        }
+    }
+    return maximum / max(m, n);
 }
-*/
+
 
 PYBIND11_MODULE(pylcs, m) {
     m.def("lcs", &lcs, R"pbdoc(
         Longest common subsequence
     )pbdoc");
 
-    m.def("lcs_of_list", &lcs_of_list, R"pbdoc(
-        Longest common subsequence of list
-    )pbdoc");
-
     m.def("lcs2", &lcs2, R"pbdoc(
         Longest common substring
-    )pbdoc");
-
-    m.def("lcs2_of_list", &lcs2_of_list, R"pbdoc(
-        Longest common substring of list
     )pbdoc");
 
     m.def("levenshtein_distance", &levenshtein_distance, R"pbdoc(
@@ -340,20 +318,11 @@ PYBIND11_MODULE(pylcs, m) {
         Same As levenshtein_distance(): Levenshtein Distance of Two Strings
     )pbdoc");
 
-    m.def("levenshtein_distance_of_list", &levenshtein_distance_of_list, R"pbdoc(
-        Levenshtein Distance of one string to a list of strings
+    m.def("custom lcs", &lcs_sim_score_1, R"pbdoc(
+        Custom Longest common subsequence taking into account attributes
     )pbdoc");
 
-    m.def("edit_distance_of_list", &levenshtein_distance_of_list, R"pbdoc(
-        Levenshtein Distance of one string to a list of strings
+    m.def("custom lcs2", &lcs_sim_score_2, R"pbdoc(
+        Custom Longest common subsequence (2) taking into account attributes
     )pbdoc");
-
-    m.def("add_arrays", &add_arrays, R"pbdoc(
-        Add arrays
-    )pbdoc");
-
-    m.def("test", &lcs_length_2, R"pbdoc(
-        Test
-    )pbdoc");
-
 }
