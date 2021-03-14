@@ -204,6 +204,115 @@ py::array_t<double> add_arrays(py::array_t<double> input1, py::array_t<double> i
   return result;
 }
 
+
+double lcs_length_2(py::array_t<int> input1, py::array_t<int> input2) {
+
+    // Format of input1 and input2:
+    // [ [TYPE(int), TLS_VERSION(int), SIZE(int)],
+    //   [TYPE(int), TLS_VERSION(int), SIZE(int)], ...
+    // ]
+
+    py::buffer_info buf1 = input1.request();
+    py::buffer_info buf2 = input2.request();
+
+    int X1 = buf1.shape[0];
+    int Y1 = buf1.shape[1];
+
+    int X2 = buf2.shape[0];
+    int Y2 = buf2.shape[1];
+    
+    int *ptr1 = (int *) buf1.ptr;
+    int *ptr2 = (int *) buf2.ptr;
+
+    int m = X1;
+    int n = X2;
+    vector<vector<double>> dp(m + 1, vector<double>(n + 1));
+    int i, j;
+    // printf("%d %d\n", m, n);
+
+    // Initialize array
+    for (i = 0; i <= m; i++) {
+        dp[i][0] = 0;
+    }
+    for (j = 0; j <= n; j++) {
+        dp[0][j] = 0;
+    }
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            // Check if same type
+            if (ptr1[(i - 1)*Y1] == ptr2[(j - 1)*Y2]) {
+                // Calculate score
+                vector<double> score_list;
+                // Fetch TLS and size
+                int size1 = ptr1[(i - 1)*Y1 + 2], size2 = ptr2[(j - 1)*Y2 + 2];
+                int tls1 = ptr1[(i - 1)*Y1 + 1], tls2 = ptr2[(j - 1)*Y2 + 1];
+                bool is_size = (size1 != -2) and (size2 != -2);
+                bool is_tls = (tls1 != -2) and (tls2 != -2);
+
+                score_list.push_back(1.0);
+                if(is_size and size1 != 0 and size2 != 0){
+                    size1, size2 = max(size1, size2), min(size1, size2);
+					score_list.push_back(1 - (size1 - size2) / size1);
+                }
+                else if(is_size and (size1 == 0 ^ size2 == 0)){
+                    score_list.push_back(1);
+                }
+                if(is_tls){
+                    score_list.push_back(0.5 + 0.5 * (tls1 == tls2));
+                }
+                // Average
+                double final_score;
+                double sumTotal = 0;
+                for(int k=0; k < score_list.size(); ++k){
+                    // not sure what to put here basically.
+                    sumTotal += score_list[k];            
+                }
+                final_score = sumTotal / score_list.size();
+                dp[i][j] = dp[i - 1][j - 1] + final_score;
+            } else {
+                if (dp[i - 1][j] >= dp[i][j - 1])
+                    dp[i][j] = dp[i - 1][j];
+                else
+                    dp[i][j] = dp[i][j-1];
+            }
+        }
+    }
+    return dp[m][n];
+}
+
+/*
+double lcs(py::array_t<int> input1, py::array_t<int> input2) {
+  py::buffer_info buf1 = input1.request();
+  py::buffer_info buf2 = input2.request();
+
+  if (buf1.size != buf2.size) {
+    throw std::runtime_error("Input shapes must match");
+  }
+
+  py::array_t<double> result = py::array_t<double>(buf1.size);
+
+  py::buffer_info buf3 = result.request();
+
+  double *ptr1 = (double *) buf1.ptr,
+         *ptr2 = (double *) buf2.ptr,
+         *ptr3 = (double *) buf3.ptr;
+  int X = buf1.shape[0];
+  int Y = buf1.shape[1];
+
+  for (size_t idx = 0; idx < X; idx++) {
+    for (size_t idy = 0; idy < Y; idy++) {
+      ptr3[idx*Y + idy] = ptr1[idx*Y+ idy] + ptr2[idx*Y+ idy];
+    }
+  }
+ 
+  // reshape array to match input shape
+  result.resize({X,Y});
+
+  return result;
+}
+*/
+
 PYBIND11_MODULE(pylcs, m) {
     m.def("lcs", &lcs, R"pbdoc(
         Longest common subsequence
@@ -239,6 +348,10 @@ PYBIND11_MODULE(pylcs, m) {
 
     m.def("add_arrays", &add_arrays, R"pbdoc(
         Add arrays
+    )pbdoc");
+
+    m.def("test", &lcs_length_2, R"pbdoc(
+        Test
     )pbdoc");
 
 }

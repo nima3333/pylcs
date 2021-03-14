@@ -39,7 +39,10 @@ def test_edit_distance_of_list():
     assert pylcs.edit_distance_of_list("aaa你好", ["你好呀"] * 10) == [4] * 10
     assert pylcs.edit_distance_of_list("aaa你好", ["bbb", "你好呀"] * 10) == [5, 4] * 10
 
-a = np.zeros((10,3))
-b = np.ones((10,3)) * 3 
+a = np.ones((10,4)) * 3 
+b = np.ones((10,4)) * 3 
+b[1][0] = 4
 c = pylcs.add_arrays(a, b)
 print(c)
+
+print(pylcs.test(a, b))
