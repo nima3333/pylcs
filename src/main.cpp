@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string.h>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 namespace py = pybind11;
@@ -63,6 +64,56 @@ int lcs_length_(const string &str1, const string &str2) {
     return dp[m][n];
 }
 
+// 最长公共子序列（不连续）
+double sw(const string &str1, const string &str2, double s, double w) {
+    if (str1 == "" || str2 == "")
+        return 0;
+    vector<string> s1 = utf8_split(str1);
+    vector<string> s2 = utf8_split(str2);
+    int n1 = s1.size();
+    int n2 = s2.size();
+
+    vector<vector<double>> S_matrix(n1, vector<double>(n2));
+    int i, j, t;
+
+    for (i = 0; i < n1; i++) {
+        for (j = 0; j < n2; j++) {
+            S_matrix[i][j] = 0;
+        }
+    }
+    for (i = 0; i < n1; i++) {
+        for (j = 0; j < n2; j++) {
+            if(s1[i] == s2[j])
+                S_matrix[i][j] = s;
+            else
+                S_matrix[i][j] = -s;
+        }
+    }
+
+    vector<vector<double>> H_matrix(n1+1, vector<double>(n2+1));
+    vector<double> max2_matrix(n1+1);
+
+    for (j = 1; j <= n2; j++) {
+        for (t = 0; t <= n1; t++) {
+            max2_matrix[t] = max(max2_matrix[t], H_matrix[t][j - 1]) - w;
+        }
+        double max1 = 0;
+        for (i = 1; i <= n1; i++) {
+            max1 = max(H_matrix[i - 1][j], max1) - w;
+            double temp = H_matrix[i - 1][j - 1] + S_matrix[i - 1][j - 1];
+            H_matrix[i][j] = max( max( max(temp, max1) , max2_matrix[i]), 0.0);
+        }
+    }
+
+    double max_return = std::numeric_limits<double>::lowest();
+    for (const auto& v : H_matrix)
+    {
+        double current_max = *std::max_element(v.cbegin(), v.cend());
+        max_return = max_return < current_max ? current_max : max_return; // max = std::max(current_max, max);
+    }
+
+    return max_return;
+}
 
 // 最长公共子串（连续）
 int lcs2_length_(const string &str1, const string &str2) {
@@ -324,5 +375,9 @@ PYBIND11_MODULE(pylcs, m) {
 
     m.def("custom_lcs2", &lcs_sim_score_2, R"pbdoc(
         Custom Longest common subsequence (2) taking into account attributes
+    )pbdoc");
+
+    m.def("smith_w", &sw, R"pbdoc(
+        Smith_waterman
     )pbdoc");
 }

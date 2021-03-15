@@ -42,7 +42,35 @@ def test_edit_distance_of_list():
 a = np.ones((10,4)) * 3 
 b = np.ones((10,4)) * 3 
 b[1][0] = 4
-c = pylcs.add_arrays(a, b)
-print(c)
 
-print(pylcs.test(a, b))
+def sw(x1, x2, w=0.03, s=0.03):
+    n1 = len(x1)
+    n2 = len(x2)
+    
+    S = np.zeros((n1, n2))
+    
+    for i in range(n1):
+        for j in range(n2):
+            if x1[i] == x2[j]:
+                S[i, j] = s
+            else:
+                S[i, j] = -s
+    
+    H = np.zeros((n1 + 1, n2 + 1))
+    max2 = np.zeros(n1 + 1)
+    
+    for j in range(1, n2 + 1):
+        for t in range(n1 + 1):
+            max2[t] = max(max2[t], H[t, j - 1]) - w
+        max1 = 0
+        for i in range(1, n1 + 1):
+            max1 = max(H[i - 1, j], max1) - w
+            H[i, j] = max(max(H[i - 1, j - 1] + S[i - 1, j - 1], max1), max2[i], 0)
+    return np.max(H)
+
+
+
+a = pylcs.smith_w('aaabaaabaaabaaab', 'aaabaaabaaababba', 0.03, 0.03)
+print(a)
+b = sw('aaabaaabaaabaaab', 'aaabaaabaaababba')
+print(b)
