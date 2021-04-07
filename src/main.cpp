@@ -75,12 +75,7 @@ double sw(const string &str1, const string &str2, double s, double w) {
 
     vector<vector<double>> S_matrix(n1, vector<double>(n2));
     int i, j, t;
-
-    for (i = 0; i < n1; i++) {
-        for (j = 0; j < n2; j++) {
-            S_matrix[i][j] = 0;
-        }
-    }
+    
     for (i = 0; i < n1; i++) {
         for (j = 0; j < n2; j++) {
             if(s1[i] == s2[j])

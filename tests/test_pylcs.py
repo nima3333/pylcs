@@ -69,9 +69,9 @@ def sw(x1, x2, w=0.03, s=0.03):
             H[i, j] = max(max(H[i - 1, j - 1] + S[i - 1, j - 1], max1), max2[i], 0)
     return np.max(H)
 
-
-
+x = 'aaabaaab'
+y = 'aaabaaabaaababba'
+a = pylcs.lcs(x, y) / max(len(x), len(y))
+print(a)
 a = pylcs.smith_w('aaabaaabaaabaaab', 'aaabaaabaaababba', 0.03, 0.03)
 print(a)
-b = sw('aaabaaabaaabaaab', 'aaabaaabaaababba')
-print(b)
