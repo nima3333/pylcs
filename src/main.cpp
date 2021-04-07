@@ -346,6 +346,71 @@ double lcs_sim_score_2(py::array_t<int> input1, py::array_t<int> input2) {
     return maximum / max(m, n);
 }
 
+py::list get_lcs(py::array_t<int> input1, py::array_t<int> input2) {
+    py::buffer_info buf1 = input1.request();
+    py::buffer_info buf2 = input2.request();
+
+    int X1 = buf1.shape[0];
+    int Y1 = buf1.shape[1];
+
+    int X2 = buf2.shape[0];
+    int Y2 = buf2.shape[1];
+
+    //assert(Y1 == Y2);
+
+    int *ptr1 = (int *) buf1.ptr;
+    int *ptr2 = (int *) buf2.ptr;
+
+    vector<int> s1(ptr1, ptr1 + X1);
+    vector<int> s2(ptr2, ptr2 + X2);
+
+    int m = s1.size();
+    int n = s2.size();
+
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1));
+
+    for (int i = 0; i <= m; i++) {
+        dp[i][0] = 0;
+    }
+    for (int j = 0; j <= n; j++) {
+        dp[0][j] = 0;
+    }
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (s1[i - 1] == s2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                if (dp[i - 1][j] >= dp[i][j - 1])
+                    dp[i][j] = dp[i - 1][j];
+                else
+                    dp[i][j] = dp[i][j-1];
+            }
+        }
+    }
+
+    int lcs_length = dp[m][n];
+    vector<int> lcs_string(lcs_length, 0);
+
+    int i = m;
+    int j = n;
+    while(i>0 and j>0){
+        if(s1[i - 1] == s2[j - 1]){
+            lcs_string[lcs_length - 1] = s1[i-1];
+            i--;
+            j--;
+            lcs_length--;
+        }
+        else if(dp[i-1][j] > dp[i][j-1]){
+            i--;
+        }
+        else{
+            j--;
+        }
+    }
+
+    py::list test_list3 = py::cast(lcs_string);
+    return test_list3;
+}
 
 PYBIND11_MODULE(pylcs, m) {
     m.def("lcs", &lcs, R"pbdoc(
@@ -374,5 +439,9 @@ PYBIND11_MODULE(pylcs, m) {
 
     m.def("smith_w", &sw, R"pbdoc(
         Smith_waterman
+    )pbdoc");
+
+    m.def("get_lcs", &get_lcs, R"pbdoc(
+        Get the LCS (not only the length)
     )pbdoc");
 }
