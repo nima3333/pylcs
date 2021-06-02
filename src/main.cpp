@@ -232,15 +232,15 @@ double lcs_sim_score_1(py::array_t<int> input1, py::array_t<int> input2) {
                 // Fetch TLS and size
                 int size1 = ptr1[(i - 1)*Y1 + 2], size2 = ptr2[(j - 1)*Y2 + 2];
                 int tls1 = ptr1[(i - 1)*Y1 + 1], tls2 = ptr2[(j - 1)*Y2 + 1];
-                bool is_size = (size1 != -2) and (size2 != -2);
-                bool is_tls = (tls1 != -2) and (tls2 != -2);
+                bool is_size = (size1 != -2) && (size2 != -2);
+                bool is_tls = (tls1 != -2) && (tls2 != -2);
 
-                if(is_size and size1 != 0 and size2 != 0){
+                if(is_size && size1 != 0 && size2 != 0){
                     int size_max = max(size1, size2);
                     int size_min = min(size1, size2);
 					score_list.push_back(1. - (double(size_max - size_min) / double(size_max)));
                 }
-                else if(is_size and ((size1 == 0) != (size2 == 0))){
+                else if(is_size && ((size1 == 0) != (size2 == 0))){
                     score_list.push_back(1);
                 }
                 if(is_tls){
@@ -312,15 +312,15 @@ double lcs_sim_score_2(py::array_t<int> input1, py::array_t<int> input2) {
                 // Fetch TLS and size
                 int size1 = ptr1[(i - 1)*Y1 + 2], size2 = ptr2[(j - 1)*Y2 + 2];
                 int tls1 = ptr1[(i - 1)*Y1 + 1], tls2 = ptr2[(j - 1)*Y2 + 1];
-                bool is_size = (size1 != -2) and (size2 != -2);
-                bool is_tls = (tls1 != -2) and (tls2 != -2);
+                bool is_size = (size1 != -2) && (size2 != -2);
+                bool is_tls = (tls1 != -2) && (tls2 != -2);
 
-                if(is_size and size1 != 0 and size2 != 0){
+                if(is_size && size1 != 0 && size2 != 0){
                     int size_max = max(size1, size2);
                     int size_min = min(size1, size2);
 					score_list.push_back(1. - (double(size_max - size_min) / double(size_max)));
                 }
-                else if(is_size and ((size1 == 0) != (size2 == 0))){
+                else if(is_size && ((size1 == 0) != (size2 == 0))){
                     score_list.push_back(1);
                 }
                 if(is_tls){
@@ -393,7 +393,7 @@ py::list get_lcs(py::array_t<int> input1, py::array_t<int> input2) {
 
     int i = m;
     int j = n;
-    while(i>0 and j>0){
+    while(i>0 && j>0){
         if(s1[i - 1] == s2[j - 1]){
             lcs_string[lcs_length - 1] = s1[i-1];
             i--;
